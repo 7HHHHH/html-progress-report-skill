@@ -19,7 +19,7 @@ See [`examples/demo.html`](examples/demo.html) for a sample.
 Copy or symlink this folder into your agent's skills directory, for example:
 
 ```bash
-git clone <this-repo> ~/.agents/skills/html-progress-report
+git clone https://github.com/7HHHHH/html-progress-report-skill.git ~/.agents/skills/html-progress-report
 # Antigravity / Gemini CLI
 ln -s ~/.agents/skills/html-progress-report ~/.gemini/config/skills/html-progress-report
 # Claude Code
