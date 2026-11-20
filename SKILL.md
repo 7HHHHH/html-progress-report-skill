@@ -25,7 +25,7 @@ after hours away. Optimize for *fast re-orientation*, not formality.
 ```
 ┌ header      status badge · last updated · branch@commit        (rewrite)
 ├ 📍 Now      TL;DR · KPIs · task board · ⚠ needs your decision   (rewrite)
-├ 🧭 Method   plain-language "how it works" + diagram              (edit only when the approach changes)
+├ 🧭 Method   analogy · diagram · worked example · why-this-design (edit only when the approach changes)
 └ 🕒 Timeline newest first; one entry per milestone               (prepend, never delete)
 ```
 
@@ -65,6 +65,10 @@ Each region is fenced by HTML comment markers. **Only edit inside markers.**
   not one tool call.
 - Rewrite **Now** to reflect the present state — it must make sense without reading the timeline.
 - Touch **Method** only if the design changed; then mention it in the entry ("method updated").
+- When you write or rewrite **Method**, it must be *vivid*: follow the 6-step recipe in
+  `references/writing-guide.md` §2b: one-sentence problem+idea → everyday **analogy** (`.analogy`) →
+  **diagram** (`.flow`/`.mermaid`) → **walkthrough of one real example with real values** (`ol.walk`) →
+  **why this design** with rejected alternatives (`.why`) → limits. The validator warns if any are missing.
 
 ### 4. Write it (directly in HTML, using components)
 - Follow `references/writing-guide.md` for language and structure (conclusion first,

@@ -41,6 +41,7 @@ it visually, so you can follow along without reading diffs.
 | 📄 **One living page** | The page is updated in place, not regenerated as a new report each time. The agent rewrites the *Now* snapshot and **prepends** one timeline entry per milestone. Old entries are never deleted. |
 | 🆕 **Catch-up mode** | Entries added since your last visit get a **NEW** tag. You can filter the timeline by tag (`feature`, `fix`, `experiment`, …) and search it. |
 | 🗣 **Plain language** | Conclusion first; *what → why → result → next*; jargon is defined on first use; one-line analogies for mechanisms; numbers always shown with a comparison (`0.912 → 0.947`). |
+| 🎨 **Vivid method explanations** | The *How it works* section follows a fixed recipe: the problem and idea in one sentence → an everyday **analogy** → a **diagram** → **one real example traced step by step with real values** → **why this design** (with rejected alternatives) → limits. The validator warns if any part is missing. |
 | 📈 **Visual-first** | KPI cards, progress bars, task board, flow diagrams, before/after, line / bar / hbar / donut charts, sortable tables, file trees, colored diffs, collapsible details. Every timeline entry includes at least one visual. |
 | 🧭 **"Needs your decision"** | Questions that block progress are pinned at the top. Each one lists the options, the trade-offs, the agent's recommendation, and what it will do by default if you don't answer. |
 | 🧪 **Honest by design** | Every number must come from a command output or a file. Unverified claims carry an `unverified` badge. Dead ends get their own entries. |
@@ -68,7 +69,7 @@ The page has four regions. Each one is fenced by markers, so the agent edits onl
 ```
 ┌ header      status badge · last updated · branch@commit        → rewritten each update
 ├ 📍 Now      TL;DR · KPIs · task board · ⚠ needs your decision   → rewritten each update
-├ 🧭 Method   plain-language "how it works" + diagram              → edited only when the approach changes
+├ 🧭 Method   analogy · diagram · worked example · why-this-design  → edited only when the approach changes
 └ 🕒 Timeline newest first, one entry per milestone               → prepend only; archived after ~30 entries
 ```
 

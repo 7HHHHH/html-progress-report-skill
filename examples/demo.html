@@ -97,6 +97,19 @@ h3{font-size:1.05rem}
 .flow .step b{display:block}
 .flow .step.hl{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
 .flow .step.new::before{content:"NEW";position:absolute;top:-9px;right:8px;font-size:.65em;font-weight:700;background:var(--accent);color:#fff;padding:0 6px;border-radius:999px}
+/* analogy + walkthrough (method section) */
+.analogy{display:flex;gap:12px;align-items:flex-start;border-radius:10px;padding:12px 14px;margin:12px 0;background:color-mix(in srgb,var(--c5) 14%,var(--panel));border:1px solid color-mix(in srgb,var(--c5) 45%,var(--line))}
+.analogy::before{content:"💡";font-size:1.4em;line-height:1.2}
+.analogy>div>b:first-child{display:block}
+.walk{list-style:none;counter-reset:w;padding:0;margin:10px 0}
+.walk>li{counter-increment:w;position:relative;padding:6px 0 10px 40px;border-left:2px dashed var(--line);margin-left:13px}
+.walk>li:last-child{border-left-color:transparent}
+.walk>li::before{content:counter(w);position:absolute;left:-14px;top:4px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em;display:flex;align-items:center;justify-content:center}
+.walk>li code{white-space:nowrap}
+.why{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:10px 0}
+.why>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}
+.why>div>b:first-child{display:block;margin-bottom:2px}
+.why .rejected{color:var(--muted);font-size:.88em;display:block;margin-top:4px}
 /* compare */
 .compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:760px){.compare{grid-template-columns:1fr}}
@@ -206,18 +219,28 @@ details[open]>summary{margin-bottom:8px}
 <!-- @method:start -->
 <section id="method" class="panel">
   <h2>🧭 How it works</h2>
-  <p>We score each image by how close its features are to text prompts like <i>"a photo of a damaged part"</i>.
-  The expensive part is turning images into features. <b>Analogy:</b> previously we re-read the whole book every lesson; now we keep bookmarks (a cache) and jump straight to the page.</p>
+  <p class="tldr">Training was slow because we recomputed the same image features every epoch. <b>The trick:</b> compute them once, keep them, and only redo the cheap scoring step.</p>
+  <div class="analogy"><div><b>Like a kitchen's mise en place</b>A chef doesn't chop onions again for every order. They prep everything once before service and then just grab it. Our backbone is the chopping; the cache is the prep tray. <span class="muted">(Where it breaks: our "onions" never spoil, so the cache never expires unless an image changes.)</span></div></div>
   <div class="flow">
     <div class="step"><b>1. Load image</b><span class="small muted">disk → tensor</span></div>
     <div class="step hl new"><b>2. Feature cache</b><span class="small muted">compute once, memory-map after</span></div>
-    <div class="step"><b>3. Compare to prompts</b><span class="small muted">cosine similarity, 8-prompt ensemble</span></div>
-    <div class="step"><b>4. Score &amp; map</b><span class="small muted">AUROC (1.0 = perfect separation)</span></div>
+    <div class="step"><b>3. Compare to prompts</b><span class="small muted">8 phrasings of "damaged"</span></div>
+    <div class="step"><b>4. Score</b><span class="small muted">max patch similarity</span></div>
   </div>
-  <div class="compare">
-    <div><h4>Before</h4><p>Backbone runs on every image every epoch → 95 s/epoch, GPU mostly waiting on itself.</p></div>
-    <div><h4>After</h4><p>Backbone runs once; later epochs read features from a memory-mapped file → 41 s/epoch.</p></div>
+  <h3>Follow one image through it</h3>
+  <ol class="walk">
+    <li><b>Input:</b> <code>screw_017.png</code>, 1024×1024, with a thin scratch near the head.</li>
+    <li><b>Features:</b> the backbone turns it into <code>[1369, 768]</code> patch vectors (≈180 ms). In epoch 1 they're written to the cache; from epoch 2 on they're read back in ≈4 ms.</li>
+    <li><b>Compare:</b> each patch is matched against prompts like <i>"a photo of a scratched screw"</i>. Scratch patches score <code>0.83</code>; clean metal stays around <code>0.21</code>.</li>
+    <li><b>Result:</b> image score <code>0.83</code> &gt; threshold <code>0.5</code> → flagged as defective ✅</li>
+  </ol>
+  <h3>Why this design</h3>
+  <div class="why">
+    <div><b>Memory-mapped file</b>Survives restarts, and the OS pages data in and out for us.<span class="rejected">✗ In-RAM dict: 14 GB, lost on crash</span></div>
+    <div><b>Key = file content hash</b>An edited image invalidates itself automatically.<span class="rejected">✗ Key = path: silently stale after edits</span></div>
+    <div><b>8-prompt ensemble</b>Asking a panel instead of one judge smooths out wording quirks.<span class="rejected">✗ 16 prompts: no gain, slower</span></div>
   </div>
+  <div class="callout note"><strong>ℹ Limits</strong>Only helps when the backbone is frozen. If we fine-tune it, the cache must be rebuilt every epoch.</div>
 </section>
 <!-- @method:end -->
 

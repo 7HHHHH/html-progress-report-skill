@@ -97,6 +97,19 @@ h3{font-size:1.05rem}
 .flow .step b{display:block}
 .flow .step.hl{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
 .flow .step.new::before{content:"NEW";position:absolute;top:-9px;right:8px;font-size:.65em;font-weight:700;background:var(--accent);color:#fff;padding:0 6px;border-radius:999px}
+/* analogy + walkthrough (method section) */
+.analogy{display:flex;gap:12px;align-items:flex-start;border-radius:10px;padding:12px 14px;margin:12px 0;background:color-mix(in srgb,var(--c5) 14%,var(--panel));border:1px solid color-mix(in srgb,var(--c5) 45%,var(--line))}
+.analogy::before{content:"💡";font-size:1.4em;line-height:1.2}
+.analogy>div>b:first-child{display:block}
+.walk{list-style:none;counter-reset:w;padding:0;margin:10px 0}
+.walk>li{counter-increment:w;position:relative;padding:6px 0 10px 40px;border-left:2px dashed var(--line);margin-left:13px}
+.walk>li:last-child{border-left-color:transparent}
+.walk>li::before{content:counter(w);position:absolute;left:-14px;top:4px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em;display:flex;align-items:center;justify-content:center}
+.walk>li code{white-space:nowrap}
+.why{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:10px 0}
+.why>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}
+.why>div>b:first-child{display:block;margin-bottom:2px}
+.why .rejected{color:var(--muted);font-size:.88em;display:block;margin-top:4px}
 /* compare */
 .compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:760px){.compare{grid-template-columns:1fr}}
@@ -180,8 +193,13 @@ details[open]>summary{margin-bottom:8px}
 <!-- @method:start -->
 <section id="method" class="panel">
   <h2>🧭 How it works</h2>
-  <p>{{PLAIN_LANGUAGE_EXPLANATION_OF_THE_APPROACH}}</p>
-  <!-- flow diagram, analogy, key design choices -->
+  <!-- Method recipe (see references/writing-guide.md §Method): problem → analogy → diagram → walkthrough → why this design → limits -->
+  <p class="tldr">{{PROBLEM_AND_IDEA_IN_ONE_PLAIN_SENTENCE}}</p>
+  <div class="analogy"><div><b>{{ANALOGY_TITLE}}</b>{{EVERYDAY_ANALOGY_AND_WHERE_IT_BREAKS}}</div></div>
+  <!-- .flow or .mermaid diagram of the pipeline -->
+  <!-- <ol class="walk"> trace ONE concrete input through every step with real values -->
+  <!-- <div class="why"> key design choices: why this, what was rejected -->
+  <!-- limits / when it fails -->
 </section>
 <!-- @method:end -->
 

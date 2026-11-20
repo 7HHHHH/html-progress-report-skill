@@ -11,6 +11,9 @@ No dependencies; everything works offline (except optional Mermaid).
 | How far along a plan / sub-tasks are | **Progress bars**, **donut** |
 | What's done / in progress / next | **Task board** |
 | How a method or pipeline works | **Flow** (offline) or **Mermaid** |
+| The intuition behind a method | **Analogy** |
+| How one real input travels through it | **Walkthrough** (`ol.walk`) |
+| Why it is built this way | **Why** cards |
 | Old vs. new behaviour / design | **Compare** |
 | Metric over time / steps / epochs | **Line chart** |
 | Comparing variants, ablations | **Bar chart** / **hbar** / **sortable table** |
@@ -88,6 +91,31 @@ flowchart LR
   B -- yes --> C[Load cache]
   B -- no --> D[Compute] --> C
 </pre>
+```
+
+## Analogy (method section)
+```html
+<div class="analogy"><div><b>Like a restaurant kitchen's mise en place</b>
+Chefs chop all vegetables once before service, then just grab them per order. We compute image
+features once, then every epoch just grabs them. <span class="muted">(Where it breaks: our "vegetables" never spoil, so the cache never expires.)</span></div></div>
+```
+
+## Walkthrough: one concrete example, step by step
+```html
+<ol class="walk">
+  <li><b>Input:</b> <code>screw_017.png</code>, 1024×1024, a thin scratch near the head.</li>
+  <li><b>Features:</b> backbone → <code>[1369, 768]</code> patch vectors, saved to cache (first epoch only).</li>
+  <li><b>Compare:</b> each patch vs. 8 "damaged" prompts → similarity map; scratch patches score <code>0.83</code>, others <code>≈0.21</code>.</li>
+  <li><b>Result:</b> image score <code>0.83</code> &gt; threshold <code>0.5</code> → flagged as defective ✅</li>
+</ol>
+```
+
+## Why this design (choices and rejected alternatives)
+```html
+<div class="why">
+  <div><b>Memory-mapped file</b>Survives restarts, and the OS handles paging.<span class="rejected">✗ In-RAM dict: 14 GB, lost on crash</span></div>
+  <div><b>Key = file hash</b>Edited images invalidate themselves automatically.<span class="rejected">✗ Key = path: stale after edits</span></div>
+</div>
 ```
 
 ## Compare (before / after)

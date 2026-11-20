@@ -100,6 +100,18 @@ def main(path: str) -> int:
         left = sorted(set(re.findall(r"\{\{[A-Z_]+\}\}", text)))
         if left:
             c.errors.append(f"unfilled placeholders: {', '.join(left)}")
+    m = re.search(r"<!-- @method:start -->(.*?)<!-- @method:end -->", text, re.S)
+    if m:
+        body = m.group(1)
+        has = lambda *cls: any(re.search(r'class="[^"]*\b%s\b' % k, body) for k in cls)
+        if not has("analogy"):
+            c.warnings.append("method: no .analogy block (explain the idea with an everyday analogy)")
+        if not has("flow", "mermaid"):
+            c.warnings.append("method: no diagram (.flow or .mermaid)")
+        if not has("walk"):
+            c.warnings.append("method: no .walk walkthrough (trace one concrete example)")
+        if not has("why"):
+            c.warnings.append("method: no .why block (key design choices and rejected alternatives)")
     c.feed(text)
     c.close()
     for t, l in c.stack:

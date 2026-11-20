@@ -24,6 +24,31 @@ Every block follows **What → Why → Result → Next**.
 - Numbers always come with a comparison: `0.912 → 0.947 (+3.5 pt)`, not just `0.947`.
 - Say *why it matters*: "…so the nightly job now finishes before 8 am."
 
+## 2b. The Method section: vivid, concrete, visual
+
+The Method block is where the reader builds a mental model. A good one lets them
+explain the approach to a colleague afterwards. A list of module names doesn't do that.
+**Test:** could a smart engineer from a *different* field retell it after one read?
+
+Follow this recipe in order. Each step maps to a component:
+
+| # | Step | Component | Rule of thumb |
+|---|---|---|---|
+| 1 | **Problem + idea in one sentence** | `p.tldr` | "X is slow/wrong because Y; we fix it by Z." No jargon. |
+| 2 | **Everyday analogy** | `.analogy` | A familiar scene (kitchen, library, post office, traffic…) that maps to the mechanism. Then say **where the analogy breaks**, one clause. |
+| 3 | **Picture of the pipeline** | `.flow` or `.mermaid` | 3–6 boxes, each with a short label and a muted one-line role. Mark changed parts `hl new`. |
+| 4 | **Walk one real example through it** | `ol.walk` | Follow one concrete input step by step with *real values* from the project (a file name, a tensor shape, a score). This is what makes it click. |
+| 5 | **Why this design** | `.why` | 2–4 cards: the choice, the reason, and the alternative that was rejected and why. |
+| 6 | **Limits** | `callout note` / `risk` | When it fails or what it assumes. Keep it honest and short. |
+
+Vividness rules:
+- **Concrete beats abstract.** Say "a 1024×1024 photo of a scratched screw", not "an input sample".
+- **Verbs over nouns.** Say "the cache *remembers* features", not "feature memoization is applied".
+- **One analogy, used consistently.** Don't switch metaphors halfway through.
+- **Name the "aha".** One bold sentence for the key insight: "**The trick:** we only pay the expensive step once."
+- **Show the numbers flowing.** Put intermediate values in `<code>` inside the walkthrough, e.g. `[1, 768]` → `0.83`.
+- **Avoid:** a wall of module names, unexplained acronyms, copying the code structure as the explanation, marketing words ("powerful", "robust", "novel").
+
 ## 3. Honest status
 
 - Use status colours consistently: ok = done/working, warn = partial/risky/unverified, bad = failed/blocked, info = neutral.
