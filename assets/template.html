@@ -440,6 +440,8 @@ function route(){const h=decodeURIComponent(location.hash.slice(1));let page=pag
   $$('a',nav).forEach(a=>a.classList.toggle('on',a.dataset.page===page.id));
   renderVisible();if(target)setTimeout(()=>target.scrollIntoView({block:'start'}),30);else if(!document.body.classList.contains('all')){scrollTo({top:0,behavior:'instant'});setTimeout(()=>scrollTo({top:0,behavior:'instant'}),0);}}
 addEventListener('hashchange',route);
+/* in-page links: set the hash ourselves so a <base href> (e.g. htmlpreview.github.io) can't send them to another URL */
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a||e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();const h=a.getAttribute('href');if(location.hash===h)route();else location.hash=h;});
 addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(document.activeElement.tagName)||e.metaKey||e.ctrlKey||e.altKey)return;const k=+e.key;if(k>=1&&k<=pages.length)location.hash=pages[k-1].id;});
 $('#allBtn').onclick=()=>{document.body.classList.toggle('all');renderVisible(true);};
 
