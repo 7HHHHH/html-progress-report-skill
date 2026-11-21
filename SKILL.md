@@ -13,7 +13,10 @@ description: >-
 
 # HTML Progress Report
 
-You keep a **single living HTML page** per project that lets the user catch up on
+The page exists to keep **the user and the agent aligned** while a project moves: the user comes back,
+sees in a minute where things are, *and checks whether the agent's understanding still matches theirs*.
+
+You keep a **single living HTML file** (with several pages inside) per project that lets the user catch up on
 a coding agent's work in under a minute. It is not a new report each time: you
 **update the snapshot** and **prepend one timeline entry**.
 
@@ -22,11 +25,18 @@ after hours away. Optimize for *fast re-orientation*, not formality.
 
 ## Page anatomy
 
+One HTML file, **several pages** switched from a left sidebar (hash routing: `#overview`,
+`#method`, …; keys `1`–`9`; "All" button shows every page on one scroll for Ctrl+F / print).
+
 ```
-┌ header      status badge · last updated · branch@commit        (rewrite)
-├ 📍 Now      TL;DR · KPIs · task board · ⚠ needs your decision   (rewrite)
-├ 🧭 Method   analogy · diagram · worked example · why-this-design (edit only when the approach changes)
-└ 🕒 Timeline newest first; one entry per milestone               (prepend, never delete)
+┌ sidebar   project · status · page list (auto-built from <section class="page">)
+├ header    status badge · last updated · branch@commit               (rewrite)
+├ 📍 overview  TL;DR · KPIs · task board · ⚠ needs your decision      (rewrite)
+├ 🤝 align     goal card · my own decisions · assumptions · deviations — user marks ✓/✗/? (update every time)
+├ 🧭 method    picture-first: idea → old-vs-new → diagram → real example → formula → why (edit when approach changes)
+├ 📊 results   charts · tables · ablations                            (edit when new evidence)
+├ …            optional extra pages after <!-- @pages:insert -->
+└ 🕒 timeline  newest first; one entry per milestone                  (prepend, never delete)
 ```
 
 Each region is fenced by HTML comment markers. **Only edit inside markers.**
@@ -34,10 +44,16 @@ Each region is fenced by HTML comment markers. **Only edit inside markers.**
 | Region | Markers | Update rule |
 |---|---|---|
 | Header | `<!-- @header:start -->` … `<!-- @header:end -->` | Every update |
-| Now | `<!-- @snapshot:start -->` … `<!-- @snapshot:end -->` | Every update (replace whole block) |
+| Overview | `<!-- @snapshot:start -->` … `<!-- @snapshot:end -->` | Every update (replace whole block) |
+| Alignment | `<!-- @align:start -->` … `<!-- @align:end -->` | Every update: add new decisions/assumptions/deviations, apply user feedback |
 | Method | `<!-- @method:start -->` … `<!-- @method:end -->` | Only when the approach/architecture changed |
+| Results | `<!-- @results:start -->` … `<!-- @results:end -->` | When new numbers/ablations land |
+| Extra pages | insert `<section class="page" id="…" data-nav="…" data-icon="…">` after `<!-- @pages:insert -->` | Only if a topic doesn't fit the pages above (e.g. "Data", "Deploy") |
 | Timeline | insert right after `<!-- @timeline:insert -->` | Prepend one `<article class="entry">` |
 | Archive | `<!-- @archive:start -->` … `<!-- @archive:end -->` | Links to archived pages |
+
+Each page starts with `<header class="page-head"><div class="kicker">…</div><h1>…</h1><p class="lede">…</p></header>`.
+Pages stay short: if a page needs more than ~3 screens, split it into another page.
 
 ## Workflow
 
@@ -45,7 +61,9 @@ Each region is fenced by HTML comment markers. **Only edit inside markers.**
 - Root = `git rev-parse --show-toplevel` (fallback: current working directory).
 - Page = `<root>/.agent-progress/index.html` (unless the user or project rules name another path).
 - If missing: copy `assets/template.html` (path relative to this SKILL.md) there,
-  fill the `{{...}}` placeholders, set `<html lang>` to the output language, and
+  fill the `{{...}}` placeholders, set `<html lang>` to the output language, translate the
+  static labels (`data-nav` page names, timeline page head, search placeholder; pager/buttons follow
+  `lang` automatically), and
   add `.agent-progress/` to `<root>/.git/info/exclude` (local-only ignore, does not touch
   the repo) unless the user wants it committed.
 - If it exists: read the header, the Now block and the **top 2 timeline entries** only
@@ -53,6 +71,13 @@ Each region is fenced by HTML comment markers. **Only edit inside markers.**
 
 ### 2. Gather facts (never invent)
 - `git log --oneline <last data-commit>..HEAD`, `git diff --stat <last>..HEAD`, current branch/commit.
+- **Look beyond the checked-out branch** — the active work is often elsewhere:
+  `git for-each-ref --sort=-committerdate --format='%(committerdate:short) %(refname:short) %(upstream:track)' refs/heads refs/remotes | head`
+  and `git worktree list`. If another branch has newer commits, read it with `git show <branch>:<path>`
+  (never switch branches), and record which branch you treat as mainline as an alignment `decision`.
+  Unpushed commits (`[ahead N]`) and deleted worktrees that still own branches are risks worth a claim.
+- Note the gap between the newest commit and today; if work may be happening off-repo (a server, a
+  notebook), say so as an `assumption` instead of presenting the repo as the whole story.
 - Test/lint/build results you actually ran; metric files (csv/json/logs) the work produced.
 - What was tried and failed, and decisions made in the conversation.
 - Every number on the page must come from a command output or file. If unverified, label it
@@ -65,10 +90,36 @@ Each region is fenced by HTML comment markers. **Only edit inside markers.**
   not one tool call.
 - Rewrite **Now** to reflect the present state — it must make sense without reading the timeline.
 - Touch **Method** only if the design changed; then mention it in the entry ("method updated").
-- When you write or rewrite **Method**, it must be *vivid*: follow the 6-step recipe in
-  `references/writing-guide.md` §2b: one-sentence problem+idea → everyday **analogy** (`.analogy`) →
-  **diagram** (`.flow`/`.mermaid`) → **walkthrough of one real example with real values** (`ol.walk`) →
-  **why this design** with rejected alternatives (`.why`) → limits. The validator warns if any are missing.
+- When you write or rewrite **Method**, it must be **picture-first** — the reader should get it from the
+  figures alone. Follow `references/writing-guide.md` §2b: `.idea` one-liner → old-vs-new `.flow`
+  (removed parts `.step.x`) → architecture `.diagram` (JSON → SVG, offline) → **one real example with
+  real outputs** (`.imgflow` of actual images/heatmaps, or `ol.walk`) → key `.formula` → `.why` cards →
+  limits. Prose between visuals ≤ 2 lines; the validator warns when the method page exceeds its text budget.
+- Real pictures beat drawn ones: if the project produces images (inputs, masks, heatmaps, plots), run the
+  existing inference/plot code on 1–2 examples and save small thumbnails (≤160 px, jpg/png) to
+  `.agent-progress/assets/`, referenced by relative path. Never fabricate an output image.
+
+### 3b. Alignment (the most important page)
+Misalignment usually comes from three places; the 🤝 page surfaces each as a `.claim` the user can mark:
+- **Goal drift** → the `.goal` card: the goal in *your own words*, done-criteria, constraints, and explicit
+  **non-goals**. Rewrite it when your understanding changes; never copy the user's wording verbatim
+  (restating is what exposes misunderstanding).
+- **Silent decisions** → `data-kind="decision"`: every choice you made without asking (library, scope cut,
+  default value, skipped step, simplification in a diagram). Say why, what you rejected, and how costly
+  it is to reverse.
+- **Wrong beliefs** → `data-kind="assumption"`: facts about the project you rely on. Tag the evidence
+  honestly: `run` (you executed it), `code` (you read it), `doc` (README/paper/chat), `guess`.
+  Verify cheap guesses before publishing them. Add `data-kind="deviation"` when the work differs from
+  what was asked, and `question` for things only the user can answer.
+- Keep ≤15 open claims, newest/riskiest first; each has a stable `data-id` (`d3`, `a7`, …) and
+  `data-since="<commit>"`.
+
+**Processing feedback.** The user marks claims ✓/✗/? and pastes a block starting with
+`[对齐反馈]` / `[Alignment feedback]` into the chat. When you see it:
+1. For each ✓: set `data-user="confirmed"` on that claim (it collapses and stops asking).
+2. For each ✗ or ?: act on the note (fix code, redo the analysis, or ask), then rewrite or remove the claim.
+   Never silently keep a rejected claim.
+3. Record the outcome as a `decision`-tagged timeline entry ("Alignment: 3 confirmed, a4 corrected — …").
 
 ### 4. Write it (directly in HTML, using components)
 - Follow `references/writing-guide.md` for language and structure (conclusion first,
@@ -80,8 +131,11 @@ Each region is fenced by HTML comment markers. **Only edit inside markers.**
   Keep code identifiers, paths, commands and metric names as-is.
 
 ### 5. Validate
-Run `python3 <skill_dir>/scripts/check_page.py <page>` and fix all errors (markers, JSON in
-charts, entry attributes, tag balance). It needs only the Python standard library.
+Run `python3 <skill_dir>/scripts/check_page.py <page>` and fix all errors (markers, page ids, JSON in
+charts/diagrams, diagram edges to unknown nodes, missing image files, entry attributes, tag balance) and
+the method warnings. It needs only the Python standard library.
+If a headless browser is available (e.g. Playwright), screenshot each page (`index.html#method`, …) once
+and look at it: overlapping labels and wrapped image strips are only visible this way.
 
 ### 5b. Keep it small
 If the timeline has more than ~30 entries, move the oldest ones to
@@ -119,5 +173,6 @@ decision the user must make. Don't repeat the page content.
 - Don't create a new page per report; don't delete history.
 - Don't paste raw logs or long code; summarize and put essentials in `<details>`.
 - Don't add external dependencies beyond the optional Mermaid CDN already wired in the template;
-  the built-in CSS components and `.chart` renderer work offline.
+  the built-in CSS components, `.chart` and `.diagram` renderers work offline. Prefer `.diagram` over Mermaid.
+- Don't put everything on one page or write paragraphs where a diagram/card/chart would do.
 - Don't claim success without evidence; show failures and dead ends — they are the most useful part.

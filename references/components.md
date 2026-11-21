@@ -1,18 +1,23 @@
 # Component catalog
 
 All components are pure HTML + the CSS/JS already inside `assets/template.html`.
-No dependencies; everything works offline (except optional Mermaid).
+No dependencies; everything works offline (except optional Mermaid). Charts and diagrams render
+lazily when their page becomes visible, and re-render on theme switch.
 
 ## Which visual for what?
 
 | You want to show… | Use |
 |---|---|
+| What the agent believes / decided / assumes | **Goal card** + **Claims** (alignment page) |
 | Headline numbers and their change | **KPI cards** |
 | How far along a plan / sub-tasks are | **Progress bars**, **donut** |
 | What's done / in progress / next | **Task board** |
-| How a method or pipeline works | **Flow** (offline) or **Mermaid** |
-| The intuition behind a method | **Analogy** |
-| How one real input travels through it | **Walkthrough** (`ol.walk`) |
+| The core idea in one line | **Idea** card (+ **Analogy**) |
+| What changed vs. the usual approach | two **Flow** rows with `.step.x` (removed) / `.step.new` |
+| A method's architecture | **Diagram** (JSON → SVG, offline) — preferred over Mermaid |
+| Input / sequence layout | **Token strip** |
+| How one real input travels through it | **Image flow** (real images/heatmaps) or **Walkthrough** (`ol.walk`) |
+| The key equation | **Formula** with annotated terms |
 | Why it is built this way | **Why** cards |
 | Old vs. new behaviour / design | **Compare** |
 | Metric over time / steps / epochs | **Line chart** |
@@ -35,6 +40,7 @@ No dependencies; everything works offline (except optional Mermaid).
 ```
 
 ## KPI cards
+Add `ok` / `warn` / `bad` to `.kpi` to colour its top bar.
 ```html
 <div class="kpis">
   <div class="kpi"><div class="label">Tests passing</div><div class="value">48/48</div><div class="delta up">▲ +6 since last</div></div>
@@ -83,6 +89,114 @@ No dependencies; everything works offline (except optional Mermaid).
 ```
 `hl` highlights a step, `new` adds a NEW tag (use for what changed).
 
+## Pages
+Every `<section class="page">` becomes a sidebar entry; `data-nav` = label, `data-icon` = emoji.
+Extra pages go right after `<!-- @pages:insert -->`. Links like `<a href="#results">` switch pages;
+links to an element id inside another page switch and scroll.
+```html
+<section class="page" id="data" data-nav="Data" data-icon="🗂">
+<!-- @data:start -->
+  <header class="page-head"><div class="kicker">Data</div><h1>Outcome-first title</h1><p class="lede">One line.</p></header>
+  …
+<!-- @data:end -->
+</section>
+```
+
+## Alignment: goal card + claims
+The page `#align` holds one `.goal` card and several `.claims` lists. The template's JS adds the
+✓ / ✗ / ? / ✎ buttons, the evidence badge, local persistence, the sticky counter bar with **Copy feedback**,
+the sidebar count and the banner on the overview page — you only write the HTML below.
+```html
+<div class="goal">
+  <div class="lead"><b>Goal (my words)</b><span>One sentence.</span></div>
+  <div><b>Done when</b><ul><li>…</li></ul></div>
+  <div><b>Constraints</b><ul><li>…</li></ul></div>
+  <div class="no"><b>Not doing</b><ul><li>…</li></ul></div>
+</div>
+<h2>🧭 Decisions I made on my own</h2>
+<div class="claims">
+  <div class="claim" data-id="d1" data-kind="decision" data-evidence="code" data-since="a1b2c3d">
+    <div class="c-body"><b>Checkable one-line statement.</b><span>Why · rejected alternative · cost to reverse.</span></div>
+  </div>
+  <div class="claim" data-id="a1" data-kind="assumption" data-evidence="guess" data-since="a1b2c3d">
+    <div class="c-body"><b>…</b><span>…</span></div>
+  </div>
+  <!-- after the user confirmed it in the chat: data-user="confirmed" -->
+</div>
+```
+`data-kind`: `decision | assumption | deviation | question`. `data-evidence`: `run | code | doc | guess`.
+IDs must be unique and stable (feedback is keyed on them). An optional `<div class="c-meta">` inside
+`.c-body` adds extra small facts (file paths, numbers).
+
+## Idea card (method page opener)
+```html
+<div class="idea"><span class="big">🎯</span><b>Discrimination needs two vectors, not language.</b><span>One muted sentence of how.</span></div>
+```
+
+## Flow with removed / new steps (old vs. new)
+```html
+<div class="imgflow-row-label">Before</div>
+<div class="flow"><div class="step"><b>Image encoder</b></div><div class="step x"><b>Text encoder</b><span class="small muted">prompts</span></div><div class="step"><b>Similarity</b></div></div>
+<div class="imgflow-row-label">Ours</div>
+<div class="flow"><div class="step"><b>Frozen ViT</b></div><div class="step hl new"><b>+2 learnable tokens</b></div><div class="step"><b>Cosine diff</b></div></div>
+```
+
+## Diagram (architecture, JSON → SVG, offline)
+Grid layout: each node sits at `col`/`row` (fractions allowed, e.g. `"row":1.5` to centre between rows).
+Node fields: `id`, `label`, `sub` (shape/role, mono), `kind` = `data | frozen | train | out | new | op`,
+`img` (relative path → image node), `span` (columns), `w`/`h`, `icon`, `note` (tooltip).
+Edges: `["from","to","label"]` or `{"from","to","label","dashed":true,"kind":"train"}` (kind colours the edge).
+Same column → vertical edge; right → curved; left → loops underneath.
+Groups: `{"label","nodes":[ids],"kind"}` draws a dashed frame (use for "frozen backbone", "repeated per layer").
+Options: `data-col-width` (default 190), `data-row-height` (92), `data-caption`, `data-legend` (rename or `null` to hide a kind).
+Hovering a node highlights its edges. Keep labels short (≤10 CJK chars / 16 latin); put detail in `sub`.
+```html
+<div class="diagram" data-col-width="180" data-caption="Hover a node to trace it."
+  data-legend='{"frozen":"frozen ❄","train":"trainable 🔥","data":"tensor","out":"output"}'
+  data-nodes='[
+    {"id":"img","img":"assets/sample.jpg","label":"input","sub":"518×518","col":0,"row":0.5},
+    {"id":"enc","label":"Encoder","sub":"[1369×1024]","col":1,"row":0,"kind":"frozen"},
+    {"id":"head","label":"Head","sub":"MLP","col":1,"row":1,"kind":"train"},
+    {"id":"cos","label":"cos","col":2,"row":0.5,"kind":"op"},
+    {"id":"out","label":"score 0.83","col":3,"row":0.5,"kind":"out"}]'
+  data-edges='[["img","enc","patches"],["enc","head"],["head","cos"],{"from":"cos","to":"out","label":"top-1%"}]'
+  data-groups='[{"label":"backbone","nodes":["enc"],"kind":"frozen"}]'></div>
+```
+
+## Token strip (sequence / input layout)
+```html
+<div class="tokens">
+  <i class="t a train">t<sub>a</sub></i><i class="t n train">t<sub>n</sub></i><i class="t c">CLS</i>
+  <i class="t p"></i><i class="t p"></i><i class="t p"></i><span class="more">… ×1369</span>
+  <span class="tcap">Caption: what the sequence is and which parts train.</span>
+</div>
+```
+`.a` red, `.n` green, `.c` blue, `.p` grey patch; `.train` adds an orange halo. Custom colour: `style="--c:#…"`.
+
+## Image flow (real example, end to end)
+Real images from the project (≤160 px thumbnails in `./assets/`). Arrows are automatic; the row never wraps
+(scrolls on small screens). `figure.hl` / `.ok` / `.bad` outline a frame; `.verdict.ok|bad` ends the row.
+Click any image to zoom.
+```html
+<div class="imgflow-row-label">bottle / broken_large</div>
+<div class="imgflow">
+  <figure><img src="assets/x.jpg" alt=""><figcaption><b>input</b><span>broken rim</span></figcaption></figure>
+  <figure><img src="assets/x_l6.png" alt=""><figcaption><b>layer 6</b><span>max 0.85</span></figcaption></figure>
+  <figure class="hl"><img src="assets/x_fused.png" alt=""><figcaption><b>fused</b></figcaption></figure>
+  <div class="verdict bad"><span class="v">NG</span><span>3.09 &gt; 0.043</span></div>
+</div>
+```
+Single image with caption: `<figure class="figure"><img src="…"><figcaption class="cap">…</figcaption></figure>`.
+
+## Formula with annotated terms
+```html
+<div class="formula">
+  <span class="term" data-note="is it like 'anomaly'?" style="--c:var(--bad)"><span>cos(p, t̃<sub>a</sub>)</span></span>
+  <span class="op">−</span>
+  <span class="term" data-note="is it like 'normal'?" style="--c:var(--ok)"><span>cos(p, t̃<sub>n</sub>)</span></span>
+</div>
+```
+
 ## Mermaid (richer diagrams; needs network, shows source text offline)
 ```html
 <pre class="mermaid">
@@ -113,7 +227,7 @@ features once, then every epoch just grabs them. <span class="muted">(Where it b
 ## Why this design (choices and rejected alternatives)
 ```html
 <div class="why">
-  <div><b>Memory-mapped file</b>Survives restarts, and the OS handles paging.<span class="rejected">✗ In-RAM dict: 14 GB, lost on crash</span></div>
+  <div><span class="ic">🗄</span><b>Memory-mapped file</b>Survives restarts, and the OS handles paging.<span class="rejected">✗ In-RAM dict: 14 GB, lost on crash</span></div>
   <div><b>Key = file hash</b>Edited images invalidate themselves automatically.<span class="rejected">✗ Key = path: stale after edits</span></div>
 </div>
 ```
@@ -128,7 +242,7 @@ features once, then every epoch just grabs them. <span class="muted">(Where it b
 
 ## Charts (built-in SVG renderer)
 Attributes: `data-type` = `line | bar | hbar | donut`; `data-labels` = JSON array;
-`data-series` = JSON array of `{"name","values",["color"],["dashed"]}`;
+`data-series` = JSON array of `{"name","values",["color"],["colors"],["dashed"]}` (`colors` = per-bar colours, e.g. highlight the winner);
 optional `data-title`, `data-unit`, `data-min`, `data-max`, `data-height`, `data-target` (line only),
 `data-center` / `data-center-label` (donut). Use single quotes around JSON attributes.
 
@@ -150,14 +264,15 @@ optional `data-title`, `data-unit`, `data-min`, `data-max`, `data-height`, `data
 ```
 
 ## Sortable table
+Wrap in `.tablewrap` for rounded borders + horizontal scroll; `td.pos` / `td.neg` colour deltas.
 ```html
-<table class="sortable">
+<div class="tablewrap"><table class="sortable">
   <thead><tr><th>Variant</th><th class="num">AUROC</th><th class="num">Time (s)</th></tr></thead>
   <tbody>
     <tr class="best"><td>ours</td><td class="num">94.7</td><td class="num">41</td></tr>
     <tr><td>baseline</td><td class="num">91.2</td><td class="num">95</td></tr>
   </tbody>
-</table>
+</table></div>
 ```
 
 ## File tree

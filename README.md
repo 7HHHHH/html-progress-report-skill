@@ -2,7 +2,7 @@
 
 # 📊 html-progress-report
 
-**Let your coding agent keep a single living HTML page, so you can catch up on its work in about a minute.**
+**Let your coding agent keep one living, multi-page HTML report, so you can catch up on its work in about a minute and check that it still understands what you want.**
 
 English · [简体中文](README.zh-CN.md)
 
@@ -18,6 +18,8 @@ English · [简体中文](README.zh-CN.md)
   <img alt="Example progress page" src="examples/screenshot.png" width="820">
 </picture>
 
+<img alt="Alignment page" src="examples/screenshot-align.png" width="405"> <img alt="Method page" src="examples/screenshot-method.png" width="405">
+
 </div>
 
 ---
@@ -30,23 +32,29 @@ already out of date. None of these quickly answers three questions:
 
 > **Where are we? What changed since I last looked? Do I need to decide anything?**
 
-This skill makes the agent keep **one HTML page per project** that answers those
-questions on the first screen. The page explains the work in plain language and shows
+It also can't tell you the most expensive thing to discover late: **whether the agent still
+understands the goal the way you do.**
+
+This skill makes the agent keep **one HTML file per project** (several pages inside) that
+answers those questions on the first screen, and lays out the agent's own understanding so
+you can correct it. The page explains the work in plain language and shows
 it visually, so you can follow along without reading diffs.
 
 ## Features
 
 | | |
 |---|---|
-| 📄 **One living page** | The page is updated in place, not regenerated as a new report each time. The agent rewrites the *Now* snapshot and **prepends** one timeline entry per milestone. Old entries are never deleted. |
+| 🤝 **Alignment page** | The agent restates the goal in its own words (with explicit non-goals), then lists the decisions it made on its own, the assumptions it relies on, and where the work deviates from what you asked. Each item carries an evidence tag (🟢 ran it · 🔵 read the code · ⚪ from docs · 🟠 guess). You mark ✓ / ✗ / ? with notes, click **Copy feedback**, paste it into the chat, and the agent fixes what you rejected. |
+| 🗂 **Pages, not a long scroll** | Overview · Alignment · Method · Results · Timeline, switched from a sidebar (keys `1`–`9`). Charts and diagrams render when their page opens. An **All** button puts everything on one scroll for Ctrl+F and printing. |
+| 📄 **One living file** | The page is updated in place, not regenerated as a new report each time. The agent rewrites the *Now* snapshot and **prepends** one timeline entry per milestone. Old entries are never deleted. |
 | 🆕 **Catch-up mode** | Entries added since your last visit get a **NEW** tag. You can filter the timeline by tag (`feature`, `fix`, `experiment`, …) and search it. |
 | 🗣 **Plain language** | Conclusion first; *what → why → result → next*; jargon is defined on first use; one-line analogies for mechanisms; numbers always shown with a comparison (`0.912 → 0.947`). |
-| 🎨 **Vivid method explanations** | The *How it works* section follows a fixed recipe: the problem and idea in one sentence → an everyday **analogy** → a **diagram** → **one real example traced step by step with real values** → **why this design** (with rejected alternatives) → limits. The validator warns if any part is missing. |
+| 🎨 **Picture-first method page** | One-line idea card → old-vs-new flow (removed steps crossed out) → architecture **diagram** drawn from JSON (offline SVG, frozen/trainable/output colours, image nodes, hover to trace edges) → **one real example** as a strip of real images/heatmaps ending in a verdict → annotated **formula** → **why** cards with rejected alternatives → limits. The validator warns when the method page has too much prose. |
 | 📈 **Visual-first** | KPI cards, progress bars, task board, flow diagrams, before/after, line / bar / hbar / donut charts, sortable tables, file trees, colored diffs, collapsible details. Every timeline entry includes at least one visual. |
 | 🧭 **"Needs your decision"** | Questions that block progress are pinned at the top. Each one lists the options, the trade-offs, the agent's recommendation, and what it will do by default if you don't answer. |
 | 🧪 **Honest by design** | Every number must come from a command output or a file. Unverified claims carry an `unverified` badge. Dead ends get their own entries. |
 | 🌐 **Your language** | The page is written in the language you are using with the agent. Code, paths, and metric names stay as they are. |
-| 📦 **Zero dependencies** | The whole page is one HTML file with inline CSS and a ~150-line SVG chart renderer. It works offline over `file://`, has light and dark themes, and prints cleanly. Mermaid is supported as an optional extra. |
+| 📦 **Zero dependencies** | The whole page is one HTML file with inline CSS and a ~150-line SVG chart renderer. It works offline over `file://`, opens in a warm light theme (dark on demand), and prints cleanly. Mermaid is supported as an optional extra. |
 | 🛡 **Agent-safe edits** | HTML comment markers fence each region. A validator that uses only the Python standard library checks markers, chart JSON, entry metadata, and tag balance. |
 
 ## How it works
@@ -64,13 +72,15 @@ flowchart LR
     G -- ok --> H[Reply with link<br/>plus up to 3 lines]
 ```
 
-The page has four regions. Each one is fenced by markers, so the agent edits only what it should:
+The file has a header and five pages. Each region is fenced by markers, so the agent edits only what it should:
 
 ```
-┌ header      status badge · last updated · branch@commit        → rewritten each update
-├ 📍 Now      TL;DR · KPIs · task board · ⚠ needs your decision   → rewritten each update
-├ 🧭 Method   analogy · diagram · worked example · why-this-design  → edited only when the approach changes
-└ 🕒 Timeline newest first, one entry per milestone               → prepend only; archived after ~30 entries
+┌ header       status badge · last updated · branch@commit             → rewritten each update
+├ 📍 Overview  TL;DR · KPIs · task board · ⚠ needs your decision        → rewritten each update
+├ 🤝 Alignment goal card · decisions · assumptions · deviations · questions → updated each time; your ✓/✗ fed back
+├ 🧭 Method    idea · old-vs-new · diagram · real example · formula · why → edited only when the approach changes
+├ 📊 Results   charts · tables · ablations                              → when new evidence lands
+└ 🕒 Timeline  newest first, one entry per milestone                    → prepend only; archived after ~30 entries
 ```
 
 ## Install
